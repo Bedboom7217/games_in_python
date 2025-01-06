@@ -1,7 +1,7 @@
 import pygame
 import random
 import time
-import sys
+import os, sys
 from enum import Enum
 
 # Initialize Pygame
@@ -97,10 +97,12 @@ class SnakeGame:
         self.play_bgm('bgm.mp3', -1)
 
     def play_bgm(self, music_file_name, loops):
+        sounds_folder = 'sounds'
+        music_file_path = os.path.join(sounds_folder, music_file_name)
         pygame.mixer.init()
         pygame.mixer.music.stop()
         self._stop_sound_effect()
-        pygame.mixer.music.load(music_file_name)
+        pygame.mixer.music.load(music_file_path)
         pygame.mixer.music.play(loops)
 
     def _stop_sound_effect(self):
@@ -109,54 +111,56 @@ class SnakeGame:
             if channel.get_busy():
                 channel.stop()
 
-def start_timer(self, timer_duration, x, y):
-    """
-    Starts and displays a timer.
-    :param timer_duration: duration of the timer in seconds
-    :param x: x-coordinate for where to display the timer on the screen
-    :param y: y-coordinate for where to display the timer on the screen
-    :returns: None
-    """
-    timer_start = pygame.time.get_ticks()  # Get the current time
-    timer_duration_ms = timer_duration * 1000  # Convert seconds to milliseconds
-    
-    def on_timer_end():
-        self.game_over = True
-    
-    # Main loop to display timer until time runs out
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+    '''
+    def start_timer(self, timer_duration, x, y):
+        """
+        Starts and displays a timer.
+        :param timer_duration: duration of the timer in seconds
+        :param x: x-coordinate for where to display the timer on the screen
+        :param y: y-coordinate for where to display the timer on the screen
+        :returns: None
+        """
+        timer_start = pygame.time.get_ticks()  # Get the current time
+        timer_duration_ms = timer_duration * 1000  # Convert seconds to milliseconds
+        
+        def on_timer_end():
+            self.game_over = True
+        
+        # Main loop to display timer until time runs out
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
 
-        # Calculate elapsed time
-        current_time = pygame.time.get_ticks()
-        elapsed_time = current_time - timer_start
-        remaining_time = max(0, (timer_duration_ms - elapsed_time) // 1000)  # Remaining time in seconds
+            # Calculate elapsed time
+            current_time = pygame.time.get_ticks()
+            elapsed_time = current_time - timer_start
+            remaining_time = max(0, (timer_duration_ms - elapsed_time) // 1000)  # Remaining time in seconds
 
-        # Check if timer has expired
-        if elapsed_time >= timer_duration_ms:
-            on_timer_end()  # Trigger function when timer ends
-            running = False  # Stop the timer
+            # Check if timer has expired
+            if elapsed_time >= timer_duration_ms:
+                on_timer_end()  # Trigger function when timer ends
+                running = False  # Stop the timer
 
-        # Convert remaining time into minutes and seconds
-        minutes = remaining_time // 60
-        seconds = remaining_time % 60
-        time_text = f"{minutes:02}:{seconds:02}"
+            # Convert remaining time into minutes and seconds
+            minutes = remaining_time // 60
+            seconds = remaining_time % 60
+            time_text = f"{minutes:02}:{seconds:02}"
 
-        # Render the timer text
-        font = pygame.font.Font('Mojang-Regualar', 28)
-        timer_text = font.render(f"Time left: {time_text}", True, WHITE)
+            # Render the timer text
+            font = pygame.font.Font('Mojang-Regualar', 28)
+            timer_text = font.render(f"Time left: {time_text}", True, WHITE)
 
-        # Draw the timer
-        screen.blit(timer_text, (x, y))
+            # Draw the timer
+            screen.blit(timer_text, (x, y))
 
-        # Update the display
-        pygame.display.flip()
+            # Update the display
+            pygame.display.flip()
 
-        # Cap the frame rate
-        pygame.time.Clock().tick(60)
+            # Cap the frame rate
+            pygame.time.Clock().tick(60)
+    '''
 
     def level_up(self):
         if self.score >= 10: 
@@ -167,13 +171,18 @@ def start_timer(self, timer_duration, x, y):
             self.frames_to_blit_level_up = 10
             if len(self.foods) > self.food_count:
                 self.foods.pop()
+            self._stop_sound_effect()
             self.play_sound('level_up.mp3')
             self.timer_duration -= 10
 
+    def load_font(self, font_name):
+        font_folder = 'fonts'
+        return os.path.join(font_folder, font_name)
+
     def title_screen(self):
         # Fonts
-        title_font = pygame.font.Font('Mojang-Bold.ttf', 50)
-        start_font = pygame.font.Font('Mojang-Regular.ttf', 20)
+        title_font = pygame.font.Font(self.load_font('Mojang-Bold.ttf'), 50)
+        start_font = pygame.font.Font(self.load_font('Mojang-Regular.ttf'), 20)
         # Title text and start message
         title_text = title_font.render("Ethan's Snake Game", True, WHITE)
         start_text = start_font.render("Click to Start", True, WHITE)
@@ -188,8 +197,6 @@ def start_timer(self, timer_duration, x, y):
     def stop_game(self):
         self.play_bgm('after_game.mp3', -1)
         self.play_sound('game_over.mp3')
-        if food.coordinate not in self.snake and food not in self.foods:
-            self.foods.append(food)
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -219,6 +226,8 @@ def start_timer(self, timer_duration, x, y):
             y = random.randint(0, GRID_COUNT-1)
             food_color = random.choice(FOOD_COLORS)
             food = SnakeFood(x, y, food_color)
+            if food.coordinate not in self.snake and food not in self.foods: 
+                self.foods.append(food)
 
     def update(self):
         if self.game_over:
@@ -261,8 +270,10 @@ def start_timer(self, timer_duration, x, y):
             self.snake.pop()
 
     def play_sound(self, sound_file_name):
+        sounds_folder = 'sounds'
+        sound_file_path = os.path.join(sounds_folder, sound_file_name)
         pygame.mixer.music.pause()
-        sound = pygame.mixer.Sound(sound_file_name)
+        sound = pygame.mixer.Sound(sound_file_path)
         channel = sound.play()
         channel.set_endevent(SOUND_EFFECT_FINISHED)
 
@@ -288,7 +299,7 @@ def start_timer(self, timer_duration, x, y):
             self.generate_foods()
 
         # Draw score
-        font = pygame.font.Font('Mojang-Regular.ttf', 28)
+        font = pygame.font.Font(self.load_font('Mojang-Regular.ttf'), 28)
         score_text = font.render(f'Score: {self.score}', True, WHITE)
         self.screen.blit(score_text, (10, 10))
         level_text = font.render(f'Level: {self.level}', True, WHITE)
@@ -298,12 +309,13 @@ def start_timer(self, timer_duration, x, y):
             if self.frames_to_blit_level_up == 0:
                 self.draw_level_up = False
             else:
-                level_up_font = pygame.font.Font('Mojang-Regular.ttf', 32)
+                level_up_font = \
+                    pygame.font.Font(self.load_font('Mojang-Regular.ttf'), 32)
                 level_up_text = level_up_font.render('Level Up!', True, WHITE)
                 level_up_rect = level_up_text.get_rect(center=(400, 200))
                 self.screen.blit(level_up_text, level_up_rect)
                 self.frames_to_blit_level_up -= 1
-                start_timer(timer_duration, 10, 100)
+                # start_timer(timer_duration, 10, 100)
 
         # Draw game over message
         if self.game_over:
