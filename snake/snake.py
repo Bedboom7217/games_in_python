@@ -80,18 +80,21 @@ class SnakeGame:
         pygame.display.set_caption('Snake Game')
         self.clock = pygame.time.Clock()
         self.in_game = False
-        self.food_count = 10
-        self.level = 1
         self.draw_level_up = False
+        self.timer = False
         self.frames_to_blit_level_up = 10
-        self.timer_duration = 120
         self.reset_game()
 
     def reset_game(self):
+        self.timer_duration = 120*1000
+        self.food_count = 10
+        self.level = 1
         self.direction = Direction.RIGHT
         self.snake = [(GRID_COUNT // 4, GRID_COUNT // 2)]
         self.foods = []
         self.generate_foods()
+        # self.timer = True
+        self.level_start_time = pygame.time.get_ticks()
         self.score = 0
         self.game_over = False
         self.play_bgm('bgm.mp3', -1)
@@ -111,56 +114,42 @@ class SnakeGame:
             if channel.get_busy():
                 channel.stop()
 
-    '''
     def start_timer(self, timer_duration, x, y):
-        """
-        Starts and displays a timer.
-        :param timer_duration: duration of the timer in seconds
-        :param x: x-coordinate for where to display the timer on the screen
-        :param y: y-coordinate for where to display the timer on the screen
-        :returns: None
-        """
-        timer_start = pygame.time.get_ticks()  # Get the current time
-        timer_duration_ms = timer_duration * 1000  # Convert seconds to milliseconds
-        
-        def on_timer_end():
-            self.game_over = True
-        
-        # Main loop to display timer until time runs out
-        running = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
+        if self.timer:
+            self.timer = False
+            timer_start = pygame.time.get_ticks()  # Get the current time
+            timer_duration_ms = timer_duration * 1000  # Convert seconds to milliseconds
+            
+            
+            # Main loop to display timer until time runs out
+            running = True
+            while running:
+                # Calculate elapsed time
+                current_time = pygame.time.get_ticks()
+                elapsed_time = current_time - timer_start
+                remaining_time = (timer_duration_ms - elapsed_time) # Remaining time in seconds
 
-            # Calculate elapsed time
-            current_time = pygame.time.get_ticks()
-            elapsed_time = current_time - timer_start
-            remaining_time = max(0, (timer_duration_ms - elapsed_time) // 1000)  # Remaining time in seconds
+                # Check if timer has expired
+                if elapsed_time >= timer_duration_ms:
+                    on_timer_end()  # Trigger function when timer ends
+                    running = False  # Stop the timer
 
-            # Check if timer has expired
-            if elapsed_time >= timer_duration_ms:
-                on_timer_end()  # Trigger function when timer ends
-                running = False  # Stop the timer
+                # Convert remaining time into minutes and seconds
+                minutes = remaining_time // 60
+                seconds = remaining_time % 60
+                time_text = f"{minutes}:{seconds}"
 
-            # Convert remaining time into minutes and seconds
-            minutes = remaining_time // 60
-            seconds = remaining_time % 60
-            time_text = f"{minutes:02}:{seconds:02}"
+                # Render the timer text
+                font = pygame.font.Font(self.load_font('Mojang-Regular.ttf'), 28)
+                timer_text = font.render(f"Time left: {time_text}", True, WHITE)
 
-            # Render the timer text
-            font = pygame.font.Font('Mojang-Regualar', 28)
-            timer_text = font.render(f"Time left: {time_text}", True, WHITE)
+                # Draw the timer
+                self.screen.blit(timer_text, (x, y))
 
-            # Draw the timer
-            screen.blit(timer_text, (x, y))
+                # Update the display
 
-            # Update the display
-            pygame.display.flip()
-
-            # Cap the frame rate
-            pygame.time.Clock().tick(60)
-    '''
+                # Cap the frame rate
+                pygame.time.Clock().tick(5)
 
     def level_up(self):
         if self.score >= 10: 
@@ -173,7 +162,8 @@ class SnakeGame:
                 self.foods.pop()
             self._stop_sound_effect()
             self.play_sound('level_up.mp3')
-            self.timer_duration -= 10
+            self.timer_duration -= 10*1000
+            self.level_start_time = pygame.time.get_ticks()
 
     def load_font(self, font_name):
         font_folder = 'fonts'
@@ -195,7 +185,6 @@ class SnakeGame:
 
 
     def stop_game(self):
-        self.play_bgm('after_game.mp3', -1)
         self.play_sound('game_over.mp3')
 
     def handle_events(self):
@@ -269,6 +258,11 @@ class SnakeGame:
         else:
             self.snake.pop()
 
+        # Check if time is up
+        level_elapsed_time = pygame.time.get_ticks() - self.level_start_time
+        if level_elapsed_time > self.timer_duration:
+            self.game_over = True
+
     def play_sound(self, sound_file_name):
         sounds_folder = 'sounds'
         sound_file_path = os.path.join(sounds_folder, sound_file_name)
@@ -305,6 +299,7 @@ class SnakeGame:
         level_text = font.render(f'Level: {self.level}', True, WHITE)
         self.screen.blit(level_text, (10, 50))
 
+        # Draw level up
         if self.draw_level_up:
             if self.frames_to_blit_level_up == 0:
                 self.draw_level_up = False
@@ -315,13 +310,28 @@ class SnakeGame:
                 level_up_rect = level_up_text.get_rect(center=(400, 200))
                 self.screen.blit(level_up_text, level_up_rect)
                 self.frames_to_blit_level_up -= 1
-                # start_timer(timer_duration, 10, 100)
 
         # Draw game over message
         if self.game_over:
             game_over_text = font.render('Game Over! Press R to Restart', True, WHITE)
             text_rect = game_over_text.get_rect(center=(WINDOW_SIZE/2, WINDOW_SIZE/2))
             self.screen.blit(game_over_text, text_rect)
+
+        # Draw time left
+        # Convert remaining time into minutes and seconds
+        level_elapsed_time = pygame.time.get_ticks() - self.level_start_time
+        remaining_time = self.timer_duration - level_elapsed_time 
+        minutes = remaining_time // 1000 // 60
+        seconds = remaining_time // 1000 % 60
+        time_text = f"{minutes}:{seconds}"
+
+        # Render the timer text
+        font = pygame.font.Font(self.load_font('Mojang-Regular.ttf'), 28)
+        timer_text = font.render(f"Time left: {time_text}", True, WHITE)
+        # Get the text's rectangle
+        text_rect = timer_text.get_rect(topright=(WINDOW_SIZE - 10, 10))
+        # Draw the timer
+        self.screen.blit(timer_text, text_rect)
 
         pygame.display.flip()
 
@@ -333,6 +343,7 @@ class SnakeGame:
             if not self.in_game:
                 self.title_screen()
             else:
+                # self.start_timer(self.timer_duration, 10, 100)
                 self.update()
                 self.draw()
                 self.clock.tick(5)
