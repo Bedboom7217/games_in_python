@@ -309,6 +309,8 @@ class TetrisGame:
                 music_file = '19.mp3'
             elif self.state == GameState.PLAYING and 11 <= self.level <= 20:
                 music_file = '4 - Deeper In the Cave....mp3' #Ominous music from Zelda II
+            else:
+                music_file = '4 - Deeper In the Cave....mp3' # Continue with level 20 music for levels 21-28
         elif self.state == GameState.PLAYING and self.hard_mode:
             music_file = 'hard_mode.mp3' #Pokemon FR/LG VS Rival music, because it's intense and fitting for hard mode
         elif self.state == GameState.PLAYING and self.endless_mode:
@@ -417,6 +419,9 @@ class View:
         self.screen = pygame.display.set_mode(WINDOW)
         pygame.display.set_caption("Tetris")
         self.clock = pygame.time.Clock()
+        self.poem = {}
+        for i, line in enumerate(VICTORY_POEM.split('\n')):
+            self.poem[line] = WINDOW[1] + i * 40
 
     def load_font(self, font_name, size):
         font_folder = 'fonts'
@@ -469,6 +474,8 @@ class View:
 
     def game_over(self):
         self.screen.fill(BGCOLOR)
+        if self.game.level > 29:
+            self.draw_win()
         over_font = self.load_font('PressStart2P.ttf', 40)
         over_surface = over_font.render("GAME OVER", True, BOXESCOLOR)
         self.screen.blit(over_surface, (WINDOW[0] // 2 - over_surface.get_width() // 2, WINDOW[1] // 2 - over_surface.get_height() // 2))
@@ -476,6 +483,15 @@ class View:
         score_surface = score_font.render(f"FINAL SCORE: {self.game.score}", True, BOXESCOLOR)
         self.screen.blit(score_surface, (WINDOW[0] // 2 - score_surface.get_width() // 2, WINDOW[1] // 2 + over_surface.get_height() // 2))
         pygame.display.flip()
+
+    def draw_win(self):
+        win_font = self.load_font('HyliaSerifBeta-Regular.otf', 16)
+        for line in self.poem:
+            line_surface = win_font.render(line, True, BOXESCOLOR)
+            self.screen.blit(line_surface, (WINDOW[0] // 2 - line_surface.get_width() // 2, self.poem[line]))
+            #Negative lines will not display, so the poem will scroll
+            self.poem[line] -= 1 #Already displayed line does not move on screen, but readies up for the next frame 
+
 
     def draw_next_tetrimino(self):
         if self.game.next_tetrimino:
