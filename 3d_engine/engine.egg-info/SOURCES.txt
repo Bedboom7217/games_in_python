@@ -1,0 +1,12 @@
+README.txt
+binding.cpp
+coordinate_transformation.cpp
+engine.cpp
+project_and_rasterizer.cpp
+pyproject.toml
+setup.py
+shading.cpp
+engine.egg-info/PKG-INFO
+engine.egg-info/SOURCES.txt
+engine.egg-info/dependency_links.txt
+engine.egg-info/top_level.txt

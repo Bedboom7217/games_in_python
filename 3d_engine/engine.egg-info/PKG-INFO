@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: engine
+Version: 0.1
+Summary: CPU 3D engine Python bindings
+Dynamic: summary
